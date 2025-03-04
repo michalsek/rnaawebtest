@@ -1,63 +1,87 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { StyleSheet } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AudioContext,
+  StretcherNode,
+} from "react-native-audio-api/lib/module/web-core";
 
 export default function HomeScreen() {
+  const [rate, setRate] = useState(100);
+  const stretchNodeRef = useRef<StretcherNode | null>(null);
+  const aCtxRef = useRef<AudioContext | null>(null);
+
+  const onStartPress = useCallback(async () => {
+    const aCtx = new AudioContext();
+    const stretchNode = await aCtx.createStretcher();
+
+    aCtxRef.current = aCtx;
+    stretchNodeRef.current = stretchNode;
+    stretchNode.connect(aCtx.destination);
+
+    const audioBuffer = await aCtx.decodeAudioDataSource("/exzoltraak.mp3");
+
+    try {
+      stretchNode.buffer = audioBuffer;
+
+      stretchNode.start();
+      stretchNode.playbackRate = rate / 100.0;
+    } catch (e) {
+      console.error(e);
+    }
+  }, [rate]);
+
+  useEffect(() => {
+    if (stretchNodeRef.current) {
+      stretchNodeRef.current.playbackRate = rate / 100.0;
+    }
+  }, [rate]);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <div
+      style={{
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 16,
+        paddingTop: 160,
+      }}
+    >
+      <div>
+        <button type="button" onClick={onStartPress}>
+          Start
+        </button>
+      </div>
+      <br />
+      <br />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: "16px",
+          color: "white",
+        }}
+      >
+        <label htmlFor="rate">Rate: {(rate / 100.0).toFixed(2)}</label>
+        <input
+          id="rate"
+          type="range"
+          min="25"
+          max="500"
+          step="1"
+          value={rate}
+          onChange={(e) => setRate(Number(e.target.value))}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </div>
+    </div>
   );
 }
 
 const styles = StyleSheet.create({
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   stepContainer: {
@@ -69,6 +93,6 @@ const styles = StyleSheet.create({
     width: 290,
     bottom: 0,
     left: 0,
-    position: 'absolute',
+    position: "absolute",
   },
 });
