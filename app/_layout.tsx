@@ -9,7 +9,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
-import { LoadCustomWasm } from "react-native-audio-api/lib/module/web-core";
+import { LoadCustomWasm } from "react-native-audio-api";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 

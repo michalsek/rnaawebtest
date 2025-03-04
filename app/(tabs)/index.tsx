@@ -1,9 +1,6 @@
 import { StyleSheet } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  AudioContext,
-  StretcherNode,
-} from "react-native-audio-api/lib/module/web-core";
+import { AudioContext, StretcherNode } from "react-native-audio-api";
 
 export default function HomeScreen() {
   const [rate, setRate] = useState(100);
