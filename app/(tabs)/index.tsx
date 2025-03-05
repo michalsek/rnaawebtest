@@ -4,26 +4,40 @@ import { AudioContext, StretcherNode } from "react-native-audio-api";
 
 export default function HomeScreen() {
   const [rate, setRate] = useState(100);
+  const [rate2, setRate2] = useState(100);
   const stretchNodeRef = useRef<StretcherNode | null>(null);
+  const stretchNodeRef2 = useRef<StretcherNode | null>(null);
   const aCtxRef = useRef<AudioContext | null>(null);
+  const hasRun = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   const onStartPress = useCallback(async () => {
-    const aCtx = new AudioContext();
-    const stretchNode = await aCtx.createStretcher();
+    console.log(aCtxRef.current?.state);
+    if (aCtxRef.current?.state === "suspended") {
+      await aCtxRef.current.resume();
+    }
 
-    aCtxRef.current = aCtx;
-    stretchNodeRef.current = stretchNode;
-    stretchNode.connect(aCtx.destination);
+    if (stretchNodeRef.current) {
+      try {
+        stretchNodeRef.current.start();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [rate]);
 
-    const audioBuffer = await aCtx.decodeAudioDataSource("/exzoltraak.mp3");
+  const onStartPress2 = useCallback(async () => {
+    console.log(aCtxRef.current?.state);
+    if (aCtxRef.current?.state === "suspended") {
+      await aCtxRef.current.resume();
+    }
 
-    try {
-      stretchNode.buffer = audioBuffer;
-
-      stretchNode.start();
-      stretchNode.playbackRate = rate / 100.0;
-    } catch (e) {
-      console.error(e);
+    if (stretchNodeRef2.current) {
+      try {
+        stretchNodeRef2.current.start();
+      } catch (e) {
+        console.error(e);
+      }
     }
   }, [rate]);
 
@@ -32,6 +46,54 @@ export default function HomeScreen() {
       stretchNodeRef.current.playbackRate = rate / 100.0;
     }
   }, [rate]);
+
+  useEffect(() => {
+    if (stretchNodeRef2.current) {
+      stretchNodeRef2.current.playbackRate = rate2 / 100.0;
+    }
+  }, [rate2]);
+
+  useEffect(() => {
+    if (hasRun.current) {
+      return;
+    }
+
+    hasRun.current = true;
+    async function loadExample() {
+      console.log("loading example");
+      const aCtx = new AudioContext();
+
+      const stretchNode = await aCtx.createStretcher();
+      const stereo1 = aCtx.createStereoPanner();
+
+      stereo1.pan.value = -1;
+      stretchNode.connect(stereo1);
+      stereo1.connect(aCtx.destination);
+
+      console.log("1231231");
+      const audioBuffer = await aCtx.decodeAudioDataSource("/exzoltraak.mp3");
+
+      aCtxRef.current = aCtx;
+      stretchNodeRef.current = stretchNode;
+
+      stretchNode.buffer = audioBuffer;
+
+      const stretchNode2 = await aCtx.createStretcher();
+      const audioBuffer2 = await aCtx.decodeAudioDataSource("/muzak.mp3");
+      const stereo2 = aCtx.createStereoPanner();
+      stereo2.pan.value = 1;
+
+      stretchNode2.connect(stereo2);
+      stereo2.connect(aCtx.destination);
+
+      stretchNode2.buffer = audioBuffer2;
+      stretchNodeRef2.current = stretchNode2;
+
+      setIsReady(true);
+    }
+
+    loadExample();
+  });
 
   return (
     <div
@@ -45,8 +107,11 @@ export default function HomeScreen() {
       }}
     >
       <div>
-        <button type="button" onClick={onStartPress}>
-          Start
+        <button type="button" onClick={onStartPress} disabled={!isReady}>
+          Start 1
+        </button>
+        <button type="button" onClick={onStartPress2} disabled={!isReady}>
+          Start 2
         </button>
       </div>
       <br />
@@ -69,6 +134,26 @@ export default function HomeScreen() {
           step="1"
           value={rate}
           onChange={(e) => setRate(Number(e.target.value))}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: "16px",
+          color: "white",
+        }}
+      >
+        <label htmlFor="rate">Rate2: {(rate2 / 100.0).toFixed(2)}</label>
+        <input
+          id="rate"
+          type="range"
+          min="25"
+          max="500"
+          step="1"
+          value={rate2}
+          onChange={(e) => setRate2(Number(e.target.value))}
         />
       </div>
     </div>
